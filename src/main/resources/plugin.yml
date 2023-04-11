@@ -1,0 +1,6 @@
+name: EnchantmentAPI
+version: '${project.version}'
+main: enchantmentapi.enchantmentapi.EnchantmentAPI
+api-version: 1.19
+authors: [ Optimus ]
+description: API for custom enchantments
