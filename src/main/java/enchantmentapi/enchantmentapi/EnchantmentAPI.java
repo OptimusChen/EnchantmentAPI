@@ -25,6 +25,7 @@ import org.checkerframework.checker.units.qual.A;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class EnchantmentAPI extends JavaPlugin implements Listener {
 
@@ -84,7 +85,7 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
 
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
 
-        if (already) {
+        if (already && meta.getLore() != null) {
             for (String s : meta.getLore()) {
                 if (s.startsWith(loreId)) {
                     lore.remove(s);
@@ -103,6 +104,10 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
         }
 
         linked.addFirst(ChatColor.GRAY + loreId + " " + toRoman(level));
+
+        if (item.getType().equals(Material.ENCHANTED_BOOK)) {
+            meta.setDisplayName(ChatColor.YELLOW + "Enchanted Book");
+        }
 
         meta.setLore(linked);
         item.setItemMeta(meta);
@@ -128,10 +133,12 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
 
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
 
-        for (String s : meta.getLore()) {
-            if (s.startsWith(loreId)) {
-                lore.remove(s);
-                break;
+        if (meta.getLore() != null) {
+            for (String s : meta.getLore()) {
+                if (s.startsWith(loreId)) {
+                    lore.remove(s);
+                    break;
+                }
             }
         }
 
@@ -170,7 +177,7 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
 
         ItemStack first = inv.getItem(0), second = inv.getItem(1), result = inv.getItem(2);
 
-        if (first == null || second == null || result == null) return;
+        if (first == null || second == null) return;
 
         HashMap<CustomEnchantment, Integer> firstEnchants = getCustomEnchantments(first);
         HashMap<CustomEnchantment, Integer> secEnchants = getCustomEnchantments(second);
@@ -199,13 +206,29 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
             int level = entry.getValue();
 
             if (!firstEnchants.containsKey(key)) {
-                resultEnchants.put(key, level);
+                if (!resultEnchants.containsKey(key)) resultEnchants.put(key, level);
             }
         }
+
+        AtomicInteger cost = new AtomicInteger(inv.getRepairCost());
+
+        if (result == null && (!firstEnchants.isEmpty() || !secEnchants.isEmpty())) {
+            result = first.clone();
+
+            cost.set(2);
+        }
+
+        ItemMeta meta = result.getItemMeta();
+        meta.setLore(new ArrayList<>());
+        result.setItemMeta(meta);
 
         for (Map.Entry<CustomEnchantment, Integer> entry : resultEnchants.entrySet()) {
             result = addEnchantment(result, entry.getKey(), entry.getValue());
         }
+
+        e.setResult(result);
+
+        getServer().getScheduler().runTask(this, () -> e.getInventory().setRepairCost(cost.get()));
     }
 
     @EventHandler
@@ -218,11 +241,17 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
         for (CustomEnchantment enchant : enchants.keySet()) {
             result = removeEnchantment(result, enchant);
         }
+
+        e.setResult(result);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         ItemStack item = new ItemStack(Material.NETHERITE_SWORD);
+        item = addEnchantment(item, test, 1);
+        e.getPlayer().getInventory().addItem(item);
+
+        item = new ItemStack(Material.ENCHANTED_BOOK);
         item = addEnchantment(item, test, 1);
         e.getPlayer().getInventory().addItem(item);
     }
