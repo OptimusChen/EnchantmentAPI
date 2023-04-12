@@ -245,17 +245,6 @@ public final class EnchantmentAPI extends JavaPlugin implements Listener {
         e.setResult(result);
     }
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-        ItemStack item = new ItemStack(Material.NETHERITE_SWORD);
-        item = addEnchantment(item, test, 1);
-        e.getPlayer().getInventory().addItem(item);
-
-        item = new ItemStack(Material.ENCHANTED_BOOK);
-        item = addEnchantment(item, test, 1);
-        e.getPlayer().getInventory().addItem(item);
-    }
-
     private final static TreeMap<Integer, String> romanMap = new TreeMap<Integer, String>() {{
         put(1000, "M");
         put(900, "CM");
